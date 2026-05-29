@@ -1,16 +1,16 @@
 using Vellum2D.Engine;
 using Silk.NET.Maths;
+using System;
 
 var engine = new VellumEngine();
 engine.SetScene(new TestScene());
-engine.Run(1280, 720, "Vellum2D Engine - Pixel Sweep Test");
+engine.Run(1280, 720, "Vellum2D Engine - Smooth Bounds Window");
 
 public class TestScene : GameScene {
     private Sprite _block = null!;
-    private float _speed = 0.5f; // Normalized units per second
+    private float _speed = 0.5f;
 
     public override void OnInitialize() {
-        // Positioned dead center initially on Layer 1
         _block = new Sprite { 
             Position = new Vector2D<float>(0.4f, 0.4f), 
             Size = new Vector2D<float>(0.2f, 0.2f), 
@@ -20,12 +20,13 @@ public class TestScene : GameScene {
     }
 
     public override void OnUpdate(double deltaTime) {
+        // CLAMP TIME DELTAS: If the OS freezes our thread during window redraw, 
+        // cap the calculation step to a standard 60Hz slice (0.016s) to completely avoid massive position jumps.
+        float clampedDelta = Math.Min((float)deltaTime, 0.016f);
+        
         var pos = _block.Position;
+        pos.X += _speed * clampedDelta;
         
-        // Paced coordinate step updates to prevent your entity from flashing into deep space
-        pos.X += _speed * (float)deltaTime;
-        
-        // Bound checks within our 0.0 to 1.0 viewport space
         if (pos.X > 0.7f) {
             pos.X = 0.7f;
             _speed = -_speed;

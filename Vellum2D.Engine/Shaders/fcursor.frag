@@ -1,4 +1,4 @@
-#version 330 core
+#version 430 core
 out vec4 FragColor;
 in vec2 TexCoords;
 
@@ -16,16 +16,24 @@ layout (std430, binding = 0) buffer SpriteBuffer {
 };
 
 uniform int uSpriteCount;
+uniform vec2 uResolution;
 
 void main() {
-    // Distinct base background color to prove the fragment shader execution pipeline is active
-    vec4 finalColor = vec4(0.2, 0.3, 0.4, 1.0); 
+    // Correct texcoords into absolute pixel measurements to normalize aspect-ratio shifts
+    vec2 fragPixel = TexCoords * uResolution;
+    
+    vec4 finalColor = vec4(0.13, 0.17, 0.22, 1.0); 
     int highestLayer = -1;
     
     for(int i = 0; i < uSpriteCount; i++) {
         SpriteData sprite = uSprites[i];
-        if(TexCoords.x >= sprite.posX && TexCoords.x <= (sprite.posX + sprite.sizeX) &&
-           TexCoords.y >= sprite.posY && TexCoords.y <= (sprite.posY + sprite.sizeY)) {
+        
+        // Convert normalized positions into absolute window pixel layouts dynamically
+        vec2 spritePixelPos = vec2(sprite.posX, sprite.posY) * uResolution;
+        vec2 spritePixelSize = vec2(sprite.sizeX, sprite.sizeY) * uResolution;
+
+        if(fragPixel.x >= spritePixelPos.x && fragPixel.x <= (spritePixelPos.x + spritePixelSize.x) &&
+           fragPixel.y >= spritePixelPos.y && fragPixel.y <= (spritePixelPos.y + spritePixelSize.y)) {
             if(sprite.layer > highestLayer) {
                 highestLayer = sprite.layer;
                 finalColor = vec4(0.85, 0.35, 0.35, 1.0); 
